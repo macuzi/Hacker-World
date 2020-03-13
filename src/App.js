@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 const App = () => {
@@ -20,13 +20,19 @@ const App = () => {
       objectID: 1
     },
   ];
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(
+    localStorage.getItem('search') || 'React'
+  );
+
+  useEffect(() => {
+    localStorage.setItem('search', searchTerm);
+  }, [searchTerm]);
 
   const handleSearch = event => {
     console.log('%c Event Triggred', 'color: orange; font-weight: bold;');
-    console.log(event.target.value);
     setSearchTerm(event.target.value);
   };
+
   const searchedStories = stories.filter(story => 
     story.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -59,8 +65,7 @@ const Search = ({ search, onSearch }) => {
   )
 }
 
-const List = ({ list }) => 
-  list.map(item => <Item key={item.objectID} item={item} />);
+const List = ({ list }) => list.map(item => <Item key={item.objectID} item={item} />);
 
 const Item = ({ item }) => (
   <div>
