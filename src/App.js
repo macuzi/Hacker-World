@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+/**
+  pass in a key so we don't overwrite the value in storage
+  now this 🎣 custom hook 🎣 is reusable 🧙🏾‍♂️
+
+  // key -- 'React' 
+*/
+const useSemiPersistentState = (key, initialState) => {
+  const [value, setValue] = useState(
+    localStorage.getItem(key) || initialState
+  );
+
+  useEffect(() => {
+    localStorage.setItem(key, value)
+  }, [value, key]);
+
+  return [value, setValue];
+};
 
 const App = () => {
   const stories = [
@@ -20,13 +37,8 @@ const App = () => {
       objectID: 1
     },
   ];
-  const [searchTerm, setSearchTerm] = useState(
-    localStorage.getItem('search') || 'React'
-  );
 
-  useEffect(() => {
-    localStorage.setItem('search', searchTerm);
-  }, [searchTerm]);
+  const [searchTerm, setSearchTerm] = useSemiPersistentState('search', 'React');
 
   const handleSearch = event => {
     console.log('%c Event Triggred', 'color: orange; font-weight: bold;');
