@@ -51,31 +51,35 @@ const App = () => {
   return (
     <div>
       <h1>Hacker Stories</h1>
-      <Search search={searchTerm} onSearch={handleSearch} />
+      <InputWithLabel 
+        id="search"
+        label="Search"
+        value={searchTerm}
+        onInputChange={handleSearch}
+      />
       <List list={searchedStories} />
     </div>
   );
 };
-const Search = ({ search, onSearch }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const handleChange = event => {
-    // B
-    setSearchTerm(event.target.value)
-    onSearch(event)
-  }
-  return (
-    <div>
-      <label htmlFor="search">Search: </label>
-      <input 
-        id="search"
-        type="text"
-        value={search}
-        onChange={onSearch}
-      />
-      <p>Searching for <strong>{searchTerm}</strong></p>
-    </div>
-  )
-}
+
+const InputWithLabel = ({ 
+  id, 
+  label, 
+  value, 
+  type = 'text',
+  onInputChange 
+}) => (
+  <>
+    <label htmlFor={id}>{label}</label>
+    &nbsp;
+    <input 
+      id={id}
+      type={type}
+      value={value}
+      onChange={onInputChange}
+    />
+  </>
+);
 
 const List = ({ list }) => list.map(item => <Item key={item.objectID} item={item} />);
 
@@ -89,4 +93,5 @@ const Item = ({ item }) => (
     <span>{item.points}</span>
   </div>
 )
+
 export default App;
