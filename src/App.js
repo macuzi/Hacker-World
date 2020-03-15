@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
+
 /**
   pass in a key so we don't overwrite the value in storage
   now this 🎣 custom hook 🎣 is reusable 🧙🏾‍♂️
@@ -54,6 +55,7 @@ const App = () => {
       <InputWithLabel 
         id="search"
         value={searchTerm}
+        isFocused
         onInputChange={handleSearch}
       >
         <strong>Search</strong>
@@ -67,20 +69,38 @@ const InputWithLabel = ({
   id, 
   value, 
   type = 'text',
-  onInputChange ,
+  onInputChange,
+  isFocused,
   children
-}) => (
-  <>
-    <label htmlFor={id}>{children}</label>
-    &nbsp;
-    <input 
-      id={id}
-      type={type}
-      value={value}
-      onChange={onInputChange}
-    />
-  </>
-);
+}) => {
+  // A - create a ref with the useRef hook
+  const inputRef = useRef();
+  // C - programming the focus on the input field when the component renders (or its dependencies change)
+  useEffect(() => {
+    if (isFocused && inputRef.current) {
+      /* 
+        D - since the ref is passed to the input field's ref attribute, its current property gives access to the element.
+          Execute the focus programmatically as a side-effect, but only if isFocused is set and the current property is existent. 
+      **/
+      inputRef.current.focus();
+    }
+  }, [isFocused]);
+
+  return (
+    <>
+      <label htmlFor={id}>{children}</label>
+      &nbsp;
+      {/* B - pass the ref into the input field's reserved ref attribute */}
+      <input 
+        ref={inputRef}
+        id={id}
+        type={type}
+        value={value}
+        onChange={onInputChange}
+      />
+    </>
+  );
+};
 
 const List = ({ list }) => list.map(item => <Item key={item.objectID} item={item} />);
 
@@ -93,6 +113,6 @@ const Item = ({ item }) => (
     <span>{item.num_comments}</span>
     <span>{item.points}</span>
   </div>
-)
+);
 
 export default App;
