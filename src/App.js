@@ -1,6 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './App.css';
 
+const initialStories = [
+  {
+    title: 'React',
+    url: 'https://reactjs.org/',
+    author: 'Jordan Walke',
+    num_comments: 3,
+    points: 4,
+    objectID: 0
+  },
+  {
+    title: 'Redux',
+    url: 'https://reduxjs.org',
+    author: 'Dan Abramov, Andrew Clark',
+    num_comments: 2,
+    points: 5,
+    objectID: 1
+  },
+];
+
+const getAsyncStories = () => 
+  new Promise(resolve => 
+    setTimeout(
+      () => resolve({ data: { stories: initialStories } }),
+      2000
+    )
+  );
+  
 /**
   pass in a key so we don't overwrite the value in storage
   now this 🎣 custom hook 🎣 is reusable 🧙🏾‍♂️
@@ -20,27 +46,14 @@ const useSemiPersistentState = (key, initialState) => {
 };
 
 const App = () => {
-  const initialStories = [
-    {
-      title: 'React',
-      url: 'https://reactjs.org/',
-      author: 'Jordan Walke',
-      num_comments: 3,
-      points: 4,
-      objectID: 0
-    },
-    {
-      title: 'Redux',
-      url: 'https://reduxjs.org',
-      author: 'Dan Abramov, Andrew Clark',
-      num_comments: 2,
-      points: 5,
-      objectID: 1
-    },
-  ];
-
   const [searchTerm, setSearchTerm] = useSemiPersistentState('search', 'React');
-  const [stories, setStories] = useState(initialStories);
+  const [stories, setStories] = useState([]);
+
+  useEffect(() => {
+    getAsyncStories().then(result => {
+        setStories(result.data.stories);
+      });
+  }, []);
 
   const handleRemoveStory = item => {
     console.log('%c This is the ID', 'color: orange; font-weight:bold');
