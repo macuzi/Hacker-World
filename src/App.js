@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useReducer, useEffect, useRef } from 'react';
 
 const initialStories = [
   {
@@ -26,7 +26,21 @@ const getAsyncStories = () =>
       2000
     )
   );
-  
+ 
+const storiesReducer = (state, action) => {
+  switch (action.type) {
+    case 'SET_STORIES':
+      return action.payload
+      break;
+    case 'REMOVE_STORY':
+      return state.filter(
+        story => action.payload.objectID !== story.objectID
+      );
+    default:
+      throw new Error();
+  }
+}
+
 /**
   pass in a key so we don't overwrite the value in storage
   now this 🎣 custom hook 🎣 is reusable 🧙🏾‍♂️
@@ -46,8 +60,8 @@ const useSemiPersistentState = (key, initialState) => {
 };
 
 const App = () => {
+  const [stories, dispatchStories] = useReducer(storiesReducer, []);
   const [searchTerm, setSearchTerm] = useSemiPersistentState('search', 'React');
-  const [stories, setStories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
 
@@ -55,18 +69,21 @@ const App = () => {
     setIsLoading(true);
     getAsyncStories()
       .then(result => {
-      setStories(result.data.stories);
-      setIsLoading(false)
+        dispatchStories({
+          type: 'SET_STORIES',
+          payload: result.data.stories
+        });
+      setIsLoading(false);
     })
     .catch(() => setIsError(true));
   }, []);
 
   const handleRemoveStory = item => {
-    console.log('%c This is the ID', 'color: orange; font-weight:bold');
-    console.log(item)
-    const newStories = stories.filter(story => item.objectID !== story.objectID)
-    setStories(newStories);
-  }
+    dispatchStories({
+      type: 'REMOVE_STORY',
+      payload: item,
+    });
+  };
 
   const handleSearch = event => {
     console.log('%c Event Triggred', 'color: orange; font-weight: bold;');
