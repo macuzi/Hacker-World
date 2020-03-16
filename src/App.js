@@ -1,4 +1,4 @@
-import React, { useState, useReducer, useEffect, useRef } from 'react';
+import React, { useState, useReducer, useEffect, useRef, useCallback } from 'react';
  
 const storiesReducer = (state, action) => {
   console.log('%c TYPE OF ACTION', 'color: white; background: black');
@@ -54,6 +54,7 @@ const useSemiPersistentState = (key, initialState) => {
 };
 
 const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query='
+
 const App = () => {
   const [stories, dispatchStories] = useReducer(
     storiesReducer, 
@@ -62,10 +63,12 @@ const App = () => {
 
   const [searchTerm, setSearchTerm] = useSemiPersistentState('search', 'React');
 
-  useEffect(() => {
+  const handleFetchStories = useCallback(() => {
+    if (!searchTerm) return;
+
     dispatchStories({ type: 'STORIES_FETCH_INIT' });
 
-    fetch(`${API_ENDPOINT}react`)
+    fetch(`${API_ENDPOINT}${searchTerm}`)
       .then(response => response.json())
       .then(result => {
         dispatchStories({
@@ -74,9 +77,14 @@ const App = () => {
         });
       })
       .catch(() => 
-        dispatchStories({ type: 'STORIES_FETCH_FAILURE'})
-      )
-  }, []);
+        dispatchStories({ type: 'STORIES_FETCH_FAILURE' })
+      );
+  }, [searchTerm]); 
+
+  useEffect(() => {
+    console.log('%c useEffect', 'color: orange; font-weight: bold;', '🌈');
+    handleFetchStories();
+  }, [handleFetchStories]);
 
   const handleRemoveStory = item => {
     dispatchStories({
@@ -93,6 +101,7 @@ const App = () => {
   const searchedStories = stories.data.filter(story => 
     story.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
   return (
     <div>
       <h1>Hacker Stories</h1>
@@ -109,7 +118,7 @@ const App = () => {
       {stories.isLoading ? (
         <p>Is Loading ...</p>
       ) : (
-        <List list={searchedStories} onRemoveItem={handleRemoveStory} />
+        <List list={stories.data} onRemoveItem={handleRemoveStory} />
       )}
     </div>
   );
