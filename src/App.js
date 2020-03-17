@@ -34,7 +34,7 @@ const storiesReducer = (state, action) => {
     default:
       throw new Error();
   }
-}
+};
 
 /**
   pass in a key so we don't overwrite the value in storage
@@ -73,22 +73,21 @@ const App = () => {
     setUrl(`${API_ENDPOINT}${searchTerm}`);
   };
 
-  const handleFetchStories = useCallback(() => {
+  const handleFetchStories = useCallback(async () => {
     if (!searchTerm) return;
 
     dispatchStories({ type: 'STORIES_FETCH_INIT' });
+    
+    try {
+      const result = await axios.get(url);
 
-    axios
-      .get(`${url}`)
-      .then(result => {
-        dispatchStories({
-          type: 'STORIES_FETCH_SUCCESS',
-          payload: result.data.hits
-        });
-      })
-      .catch(() => 
-        dispatchStories({ type: 'STORIES_FETCH_FAILURE' })
-      );
+      dispatchStories({
+        type: 'STORIES_FETCH_SUCCESS',
+        payload: result.data.hits
+      });
+    } catch {
+      dispatchStories({ type: 'STORIES_FETCH_FAILURE' });
+    }
   }, [url]); 
 
   useEffect(() => {
@@ -149,9 +148,7 @@ const InputWithLabel = ({
   isFocused,
   children
 }) => {
-  // A - create a ref with the useRef hook
   const inputRef = useRef();
-  // C - programming the focus on the input field when the component renders (or its dependencies change)
   useEffect(() => {
     if (isFocused && inputRef.current) {
       /* 
@@ -166,7 +163,6 @@ const InputWithLabel = ({
     <>
       <label htmlFor={id}>{children}</label>
       &nbsp;
-      {/* B - pass the ref into the input field's reserved ref attribute */}
       <input 
         ref={inputRef}
         id={id}
