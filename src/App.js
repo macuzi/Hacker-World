@@ -71,6 +71,7 @@ const App = () => {
 
   const handleSearchSubmit = event => {
     setUrl(`${API_ENDPOINT}${searchTerm}`);
+    event.preventDefault();
   };
 
   const handleFetchStories = useCallback(async () => {
@@ -114,22 +115,14 @@ const App = () => {
   return (
     <div>
       <h1>Hacker Stories</h1>
-      <InputWithLabel 
-        id="search"
-        value={searchTerm}
-        isFocused
-        onInputChange={handleSearchInput}
-      >
-        <strong>Search:</strong>
-      </InputWithLabel>
-      <button
-        type="button"
-        disabled={!searchTerm}
-        onClick={handleSearchSubmit}
-      >
-        Submit
-      </button>
+      <SearchForm 
+        searchTerm={searchTerm}
+        onSearchInput={handleSearchInput}
+        onSearchSubmit={handleSearchSubmit}
+      />
+
       <hr />
+      
       {stories.isError && <p>Something went wrong ...</p>}
       {stories.isLoading ? (
         <p>Is Loading ...</p>
@@ -139,6 +132,26 @@ const App = () => {
     </div>
   );
 };
+
+const SearchForm = ({ 
+  searchTerm, 
+  onSearchInput, 
+  onSearchSubmit 
+}) => (
+  <form onSubmit={onSearchSubmit}>
+    <InputWithLabel 
+      id="search"
+      value={searchTerm}
+      onInputChange={onSearchInput}
+      isFocused
+    >
+      <strong>Search:</strong>
+    </InputWithLabel>
+    <button type="submit" disabled={!searchTerm}>
+      Submit
+    </button>
+  </form>
+)
 
 const InputWithLabel = ({ 
   id, 
@@ -151,10 +164,6 @@ const InputWithLabel = ({
   const inputRef = useRef();
   useEffect(() => {
     if (isFocused && inputRef.current) {
-      /* 
-        D - since the ref is passed to the input field's ref attribute, its current property gives access to the element.
-          Execute the focus programmatically as a side-effect, but only if isFocused is set and the current property is existent. 
-      **/
       inputRef.current.focus();
     }
   }, [isFocused]);
