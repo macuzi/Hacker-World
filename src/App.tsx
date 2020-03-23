@@ -1,80 +1,66 @@
 import React, { useState, useReducer, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import styled  from 'styled-components';
 
-const StyledContainer = styled.div`
-  height: 100vw;
-  padding: 20px;
-  background: #83a4d4;
-  background: linear-gradient(to-left, #b6fbff, #83a4d4);
-  color: #171212;
-`;
+const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query='
 
-const StyledHeadlinePrimary = styled.h1`
-  font-size: 48px;
-  font-weight: 300;
-  letter-spacing: 2px;
-`
+const useSemiPersistentState = (
+  key: string,
+  initialState: string
+) : [string, (newValue: string) => void] => {
+  const [value, setValue] = useState(
+    localStorage.getItem(key) || initialState
+  );
+  useEffect(() => {
+    localStorage.setItem(key, value) ;
+  }, [value, setValue])
+  return [value, setValue]
+};
 
-const StyledItem = styled.div`
-  display: flex;
-  align-items: center;
-  padding-bottom: 5px;
-`
+type Story = {
+  objectID: string;
+  url: string;
+  title: string;
+  author: string;
+  num_comments: number;
+  points: number;
+}
 
-const StyledColumn = styled.span`
-  padding: 0 5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+type Stories = Array<Story>;
 
-  a {
-    color: inherit;
-  }
+type StoriesState = {
+  data: Stories;
+  isLoading: boolean;
+  isError: boolean;
+};
 
-  width: ${props => props.width}
-`
-const StyledButton = styled.button`
-  background: transparent;
-  border: 1px solid #171212;
-  padding: 5px;
-  cursor: pointer;
-  transition: all 0.1 ease-in;
+interface StoriesFetchInitAction {
+  type: 'STORIES_FETCH_INIT';
+}
 
-  &:hover {
-    background: #17122;
-    color: #ffffff;
-  }
-`; 
+interface StoriesFetchSuccessAction {
+  type: 'STORIES_FETCH_SUCCESS';
+  payload: Stories;
+}
 
-const StyledButtonSmall = styled(StyledButton)`
-  padding: 5px
-`;
+interface StoriesFetchFailureAction {
+  type: 'STORIES_FETCH_FAILURE';
+}
 
-const StyledButtonLarge = styled(StyledButton)`
-  padding: 10px;
-`;
+interface StoriesRemoveAction {
+  type: 'REMOVE_STORY';
+  payload: Story
+}
 
-const StyledSearchForm = styled.form`
-  padding: 10px 0 20px 0;
-  display: flex;
-  align-items: baseline;
-`
+type StoriesAction = 
+  | StoriesFetchInitAction
+  | StoriesFetchSuccessAction
+  | StoriesFetchFailureAction
+  | StoriesRemoveAction
 
-const StyledLabel = styled.label`
-  border-top: 1px solid #171212;
-  border-left: 1px solid #171212;
-  padding-left: 5px;
-  font-size: 24px;
-`
-
-const StyledInput = styled.input`
-  border: none;
-  border-bottom: 1px solid #171212;
-  background-color: transparent;
-  font-size: 24px;
-`
-const storiesReducer = (state, action) => {
+const storiesReducer = (
+  state: StoriesState, 
+  action: StoriesAction
+  ) => {
   console.log('%c TYPE OF ACTION', 'color: white; background: black');
   console.log(action.type);
   switch (action.type) {
@@ -115,41 +101,28 @@ const storiesReducer = (state, action) => {
 
   // key -- 'React' 
 */
-const useSemiPersistentState = (key, initialState) => {
-  const [value, setValue] = useState(
-    localStorage.getItem(key) || initialState
-  );
 
-  useEffect(() => {
-    localStorage.setItem(key, value)
-  }, [value, key]);
-
-  return [value, setValue];
-};
-
-const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query='
 
 const App = () => {
+  const [searchTerm, setSearchTerm] = useSemiPersistentState('search', 'React');
+  const [url, setUrl] = useState(`${API_ENDPOINT}${searchTerm}`);
+
   const [stories, dispatchStories] = useReducer(
     storiesReducer, 
     { data: [], isLoading: false, isError: false }
   );
 
-  const [searchTerm, setSearchTerm] = useSemiPersistentState('search', 'React');
-  const [url, setUrl] = useState(`${API_ENDPOINT}${searchTerm}`);
-
-  const handleSearchInput = event => {
+  // left off here 
+  const handleSearchInput = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value)
   }
 
-  const handleSearchSubmit = event => {
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     setUrl(`${API_ENDPOINT}${searchTerm}`);
     event.preventDefault();
   };
 
   const handleFetchStories = useCallback(async () => {
-    if (!searchTerm) return;
-
     dispatchStories({ type: 'STORIES_FETCH_INIT' });
     
     try {
@@ -169,14 +142,14 @@ const App = () => {
     handleFetchStories();
   }, [handleFetchStories]);
 
-  const handleRemoveStory = item => {
+  const handleRemoveStory = (item: Story) => {
     dispatchStories({
       type: 'REMOVE_STORY',
       payload: item,
     });
   };
 
-  const handleSearch = event => {
+  const handleSearch = (event: React.ChangeEvent<HTMLFormElement>) => {
     console.log('%c Event Triggred', 'color: orange; font-weight: bold;');
     setSearchTerm(event.target.value);
   };
@@ -186,8 +159,8 @@ const App = () => {
   );
 
   return (
-    <StyledContainer>
-      <StyledHeadlinePrimary>Hacker Stories</StyledHeadlinePrimary>
+    <div>
+      <h1>Hacker Stories</h1>
       <SearchForm 
         searchTerm={searchTerm}
         onSearchInput={handleSearchInput}
@@ -202,16 +175,22 @@ const App = () => {
       ) : (
         <List list={stories.data} onRemoveItem={handleRemoveStory} />
       )}
-    </StyledContainer>
+    </div>
   );
 };
+
+type SearchFormProps = {
+  searchTerm: string;
+  onSearchInput: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onSearchSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+}
 
 const SearchForm = ({ 
   searchTerm, 
   onSearchInput, 
   onSearchSubmit 
-}) => (
-  <StyledSearchForm onSubmit={onSearchSubmit}>
+}: SearchFormProps) => (
+  <form onSubmit={onSearchSubmit}>
     <InputWithLabel 
       id="search"
       value={searchTerm}
@@ -220,11 +199,20 @@ const SearchForm = ({
     >
       <strong>Search:</strong>
     </InputWithLabel>
-    <StyledButtonLarge type="submit" disabled={!searchTerm}>
+    <button type="submit" disabled={!searchTerm}>
       Submit
-    </StyledButtonLarge>
-  </StyledSearchForm>
-)
+    </button>
+  </form>
+);
+
+type InputWithLabelProps = {
+  id: string;
+  value: string;
+  type?: string;
+  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  isFocused?: boolean;
+  children: React.ReactNode;
+};
 
 const InputWithLabel = ({ 
   id, 
@@ -233,8 +221,8 @@ const InputWithLabel = ({
   onInputChange,
   isFocused,
   children
-}) => {
-  const inputRef = useRef();
+}: InputWithLabelProps) => {
+  const inputRef = useRef<HTMLInputElement>(null!);
   useEffect(() => {
     if (isFocused && inputRef.current) {
       inputRef.current.focus();
@@ -243,9 +231,9 @@ const InputWithLabel = ({
 
   return (
     <>
-      <StyledLabel htmlFor={id}>{children}</StyledLabel>
+      <label htmlFor={id}>{children}</label>
       &nbsp;
-      <StyledInput 
+      <input 
         ref={inputRef}
         id={id}
         type={type}
@@ -256,34 +244,50 @@ const InputWithLabel = ({
   );
 };
 
-const List = ({ list, onRemoveItem }) => 
-  list.map(item => (
-    <Item
-      key={item.objectID}
-      item={item}
-      onRemoveItem={onRemoveItem}
-    />
-  ));
+type ListProps = {
+  list: Stories;
+  onRemoveItem: (item: Story) => void;
+};
 
-const Item = ({ item, onRemoveItem }) => {
+const List = ({ list, onRemoveItem }: ListProps) => (
+  <>
+    {list.map(item => (
+      <Item 
+        key={item.objectID}
+        item={item}
+        onRemoveItem={onRemoveItem}
+      />
+    ))}
+  </>
+);
+
+type ItemProps = {
+  item: Story;
+  onRemoveItem: (item: Story) => void;
+}
+
+const Item = ({item, onRemoveItem}: ItemProps) => {
   function handleRemoveItem () {
     onRemoveItem(item);
   }
   return (
-    <StyledItem>
-      <StyledColumn width="40%">
+    <div>
+      <span>
         <a href={item.url}>{item.title}</a>
-      </StyledColumn>
-      <StyledColumn width="30%">{item.author}</StyledColumn>
-      <StyledColumn width="10%">{item.num_comments}</StyledColumn>
-      <StyledColumn width="10%">{item.points}</StyledColumn>
-      <StyledColumn width="10%">
-        <StyledButtonSmall type="buttton" onClick={handleRemoveItem}>
+      </span>
+      <span>{item.author}</span>
+      <span>{item.num_comments}</span>
+      <span>{item.points}</span>
+      <span>
+        <button type="button" onClick={handleRemoveItem}>
           Dismiss
-        </StyledButtonSmall>
-      </StyledColumn>
-    </StyledItem>
+        </button>
+      </span>
+    </div>
   )
 }
 
 export default App;
+
+
+
