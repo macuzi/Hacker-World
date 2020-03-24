@@ -289,5 +289,4 @@ const Item = ({item, onRemoveItem}: ItemProps) => {
 
 export default App;
 
-
-
+export { SearchForm, InputWithLabel, List, Item };
